@@ -1,0 +1,9 @@
+[package]
+name = "cyber_blog_backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.3.1"
+actix-cors = "0.6.4"
+dotenv = "0.15"
