@@ -1,6 +1,7 @@
 use actix_web::{error::ErrorUnauthorized, Error, HttpRequest};
-use argon2::password_hash::{
-    rand_core::OsRng, Argon2, PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
 };
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
@@ -26,12 +27,12 @@ pub fn hash_password(password: &str) -> Result<String, String> {
         .map_err(|e| format!("Password hashing error: {}", e))
 }
 
-pub fn verify_passowrd(hash: &str, password: &str) -> Result<bool, String> {
+pub fn verify_password(hash: &str, password: &str) -> Result<bool, String> {
     let parsed_hash =
         PasswordHash::new(hash).map_err(|e| format!("Failed to parse hash: {}", e))?;
 
     Ok(Argon2::default()
-        .verify_passowrd(password.as_bytes(), &parsed_hash)
+        .verify_password(password.as_bytes(), &parsed_hash)
         .is_ok())
 }
 
@@ -69,26 +70,22 @@ pub fn validate_token(req: &HttpRequest) -> Result<Claims, Error> {
         .ok_or_else(|| ErrorUnauthorized("Missing Authorization header"))?;
 
     let auth_str = auth_header
-        .to_string()
-        .map_err(|_| ErrorUnauthorized("Invalid authorization header"))?;
+        .to_str()
+        .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid authorization header"))?
+        .to_string();
 
     if !auth_str.starts_with("Bearer ") {
         return Err(ErrorUnauthorized("Invalid Authorization header format"));
     }
 
-    let token = &auth_str[7..]; //skips "Bearer "
+    let token = &auth_str[7..];
 
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
-        &validation::default(),
+        &Validation::default(),
     )
     .map_err(|e| ErrorUnauthorized(format!("Invalid token: {}", e)))?;
 
     Ok(token_data.claims)
-}
-
-pub fn is_admin(req: &HttpRequest) -> Result<bool, Error> {
-    let claims = validate_token(req)?;
-    Ok(claims.is_admin)
 }

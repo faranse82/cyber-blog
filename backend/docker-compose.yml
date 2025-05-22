@@ -1,9 +1,26 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=cyber_blog
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build: .
     ports:
       - "8080:8080"
     environment:
       - RUST_LOG=info
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/cyber_blog
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
