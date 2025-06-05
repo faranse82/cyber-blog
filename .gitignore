@@ -1,0 +1,84 @@
+# Rust specific
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Dependencies
+/node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage/
+
+# Production build
+/build/
+/dist/
+
+# Debug files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history
+
+# Binary files
+*.bin
+*.exe
+*.o
+*.so
+*.dll
+*.dylib
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Frontend build artifacts (if you add a frontend later)
+/frontend/build/
+/frontend/node_modules/
+/public/bundles/
