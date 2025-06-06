@@ -13,7 +13,7 @@ const HomePage: React.FC = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await api.get('/posts');
+            const response = await api.get('/api/posts');
 
             setPosts(response.data.filter((post: Post) => post.published));
         } catch (error) {

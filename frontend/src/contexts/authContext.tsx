@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoading(true);
 
         try {
-            const response = await api.post('/auth/login', { username, password });
+            const response = await api.post('/api/auth/login', { username, password });
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const register = async (data: any) => {
         setIsLoading(true);
         try {
-            const response = await api.post('/auth/register', data);
+            const response = await api.post('/api/auth/register', data);
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);
