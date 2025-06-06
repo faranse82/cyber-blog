@@ -46,10 +46,10 @@ const Navigation: React.FC = () => {
                             <Link to="/" className="text-xl font-medium hover:text-gray-300">
                                 Home
                             </Link>
-                            <a href="#" className="text-xl font-medium hover:text-gray-300">
+                            <a href="https://github.com/faranse82" className="text-xl font-medium hover:text-gray-300">
                                 GitHub
                             </a>
-                            <a href="#" className="text-xl font-medium hover:text-gray-300">
+                            <a href="https://www.linkedin.com/in/faran-sepehri-b82716278/" className="text-xl font-medium hover:text-gray-300">
                                 LinkedIn
                             </a>
                         </div>

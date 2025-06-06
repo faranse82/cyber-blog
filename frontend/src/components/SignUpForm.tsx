@@ -50,6 +50,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onClose, onSwitchToSignIn }) =>
             navigate('/');
         } catch (err) {
             setError('Registration failed. Username or email may already exist.');
+            console.log('Error: Registration Failed', err);
         } finally {
             setLoading(false);
         }

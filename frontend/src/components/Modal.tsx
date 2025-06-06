@@ -9,7 +9,7 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key == 'Escape') {
+            if (e.key === 'Escape') {
                 onClose();
             }
         };
@@ -29,12 +29,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
+            <input
                 className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
                 onClick={onClose}
-            />
-
-            {/* Modal Content */}
+                onKeyDown={onClose}
+                role="button"/>
             <div className="relative z-10">
                 {children}
             </div>

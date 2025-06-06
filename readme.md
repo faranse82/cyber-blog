@@ -42,7 +42,11 @@ cargo run
 
 Currently implementing backend functionality. Frontend with React planned after backend reaches a functional state.
 
-## Next Steps
-
-- Finalise and implement React frontend - Figma Project: https://www.figma.com/design/4N3nQ00NaZMsuDtQQ8rUNA/cyberBlog?node-id=0-1&t=R47kfmVSYwYhoCAc-1
-- Start thinking about stuff to post about
+## To-do
+- [ ] Implement profile page
+- [ ] Implement create post component
+- [ ] Implement forgot password function
+- [ ] Implement search functionality
+- [ ] Implement post page
+- [ ] Implement post edit (and published on:off)
+- [ ] Scale down all elements by around 30%

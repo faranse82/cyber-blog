@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { LoginCredentials } from "../types";
 import { useAuth } from "../contexts/authContext";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
 
 interface LoginFormProps {
     onClose: () => void;
@@ -40,6 +38,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onClose, onSwitchToSignUp}) => {
             navigate('/');
         } catch (err) {
             setError('Invalid credentials');
+            console.log('Invalid credentials: ', err);
         } finally {
             setLoading(false);
         }
