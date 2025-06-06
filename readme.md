@@ -1,10 +1,11 @@
-# Cybersecurity Blog API
+# Cybersecurity Blog
 
-Backend REST API for a cybersecurity blog built with Rust. Frontend implementation planned for later stages.
+Backend REST API for a cybersecurity blog built with Rust. Frontend implementation has begun.
 
 ## Tech Stack
 
 - **Backend**: Rust, Actix-Web, SQLx, PostgreSQL
+- **Frontend**: React, TypeScript, Tailwind
 - **Authentication**: JWT, Argon2 password hashing
 - **Deployment**: Docker
 
@@ -43,5 +44,5 @@ Currently implementing backend functionality. Frontend with React planned after 
 
 ## Next Steps
 
-- Complete API implementation
-- Develop React frontend
+- Finalise and implement React frontend - Figma Project: https://www.figma.com/design/4N3nQ00NaZMsuDtQQ8rUNA/cyberBlog?node-id=0-1&t=R47kfmVSYwYhoCAc-1
+- Start thinking about stuff to post about

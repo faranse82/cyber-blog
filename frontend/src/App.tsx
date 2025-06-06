@@ -1,8 +1,9 @@
 import React from 'react';
-//import './index';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/authContext';
 import Navigation from './components/Navigation';
+import HomePage from './pages/HomePage';
+import Footer from './components/Footer';
 
 function App() {
   return (
@@ -12,8 +13,10 @@ function App() {
           <Navigation />
           <main className="flex-grow">
             <Routes>
+              <Route path="/" element={<HomePage />} />
             </Routes>
           </main>
+          <Footer />
         </div>
       </Router>
     </AuthProvider>
