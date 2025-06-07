@@ -1,5 +1,7 @@
+use std::path;
+
 use actix_cors::Cors;
-use actix_web::{middleware, web, App, HttpServer};
+use actix_web::{middleware, web::{self, route}, App, HttpServer};
 use dotenv::dotenv;
 
 mod auth;
@@ -33,7 +35,8 @@ async fn main() -> std::io::Result<()> {
             // User routes
             .service(
                 web::scope("/api/users")
-                    .route("/profile", web::put().to(handlers::users::update_profile)),
+                    .route("/profile", web::put().to(handlers::users::update_profile))
+                    .route("/me", web::get().to(handlers::users::user_info)),
             )
             // Post routes
             .service(

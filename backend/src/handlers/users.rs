@@ -1,10 +1,9 @@
-use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web::{Error, HttpRequest, HttpResponse, web};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth::{self, create_token, verify_password};
-use crate::models::user::User;
-use crate::models::user::{CreateUserRequest, LoginRequest, UpdateUserRequest};
+use crate::models::user::{CreateUserRequest, LoginRequest, UpdateUserRequest, User, UserResponse};
 pub async fn register(
     pool: web::Data<PgPool>,
     user_req: web::Json<CreateUserRequest>,
@@ -61,6 +60,43 @@ pub async fn register(
         "message": "User created successfully",
         "token": token,
         "user": user.to_response()
+    })))
+}
+
+pub async fn user_info(
+    pool: web::Data<PgPool>,
+    req: HttpRequest,
+) -> Result<HttpResponse, Error> {
+    let claims = auth::validate_token(&req)?;
+
+    let user_id = Uuid::parse_str(&claims.sub)
+    .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid user token"))?;
+
+
+    let user = sqlx::query_as!(
+        UserResponse,
+        r#"
+        SELECT id, username, email, profile_pic_url, is_admin
+        FROM users
+        WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|e| {
+        eprintln!("Database Error: {}", e);
+        actix_web::error::ErrorInternalServerError("Database Error")
+    })?;
+
+    let user = match user {
+        Some(user) => user,
+        None => return Err(actix_web::error::ErrorNotFound("User not found")),
+    };
+    
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "user": user,
     })))
 }
 
