@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { Link } from 'react-router-dom';
 import { useAuth } from "../contexts/authContext";
-import SignUpForm from "./SignUpForm";
 import Modal from "./Modal";
 import LoginForm from "./LoginForm";
 
 const Navigation: React.FC = () => {
     const { user, logout } = useAuth();
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const handleAvatarClick = () => {
@@ -16,16 +14,7 @@ const Navigation: React.FC = () => {
             setShowProfileMenu(!showProfileMenu);
         } else {
             setShowAuthModal(true);
-            setAuthMode('login');
         }
-    };
-
-    const handleSwitchToSignUp = () => {
-        setAuthMode('signup');
-    };
-
-    const handleSwitchToLogin = () => {
-        setAuthMode('login');
     };
 
     const handleLogout = () => {
@@ -46,6 +35,9 @@ const Navigation: React.FC = () => {
                             <Link to="/" className="text-xl font-medium hover:text-gray-300">
                                 Home
                             </Link>
+                            <Link to="/about-me" className="text-xl font-medium hover:text-gray-300">
+                                About Me
+                            </Link>
                             <a href="https://github.com/faranse82" className="text-xl font-medium hover:text-gray-300">
                                 GitHub
                             </a>
@@ -55,32 +47,17 @@ const Navigation: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-8">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="w-80 px-4 py-2 rounded-full bg-white text-gray-700 placeholder-gray-500"
-                            />
-                        </div>
-
+                    <div className="flex items-center">
                         <div className="relative">
                             <button
                                 onClick={handleAvatarClick}
                                 className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center hover:bg-gray-600 transition-colors"
                             >
-                                {user ? user.username[0].toUpperCase() : 'F'}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-user-icon lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                             </button>
 
                             {user && showProfileMenu && (
                                 <div className="absolute right-0 mt-2 w-48 bg-zinc-800 rounded-lg shadow-lg py-2">
-                                    <Link
-                                        to="/profile"
-                                        className="block px-4 py-2 text-white hover:bg-zinc-700"
-                                        onClick={() => setShowProfileMenu(false)}
-                                    >
-                                        Profile
-                                    </Link>
                                     <button
                                         onClick={handleLogout}
                                         className="block w-full text-left px-4 py-2 text-white hover:bg-zinc-700"
@@ -95,17 +72,9 @@ const Navigation: React.FC = () => {
             </nav>
 
             <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
-                {authMode === 'login' ? (
-                    <LoginForm
-                        onClose={() => setShowAuthModal(false)}
-                        onSwitchToSignUp={handleSwitchToSignUp}
-                    />
-                ) : (
-                    <SignUpForm
-                        onClose={() => setShowAuthModal(false)}
-                        onSwitchToSignIn={handleSwitchToLogin}
-                    />
-                )}
+                <LoginForm
+                    onClose={() => setShowAuthModal(false)}
+                />
             </Modal>
         </>
     );

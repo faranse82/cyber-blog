@@ -1,7 +1,8 @@
-use std::path;
-
 use actix_cors::Cors;
-use actix_web::{middleware, web::{self, route}, App, HttpServer};
+use actix_web::{
+    App, HttpServer, middleware,
+    web::{self},
+};
 use dotenv::dotenv;
 
 mod auth;

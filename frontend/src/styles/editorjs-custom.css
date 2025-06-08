@@ -1,0 +1,58 @@
+/* Custom styles for Editor.js to match your dark theme */
+/* THIS FILE IS AI GENERATED */
+/* Editor.js container */
+.codex-editor__redactor {
+    padding-bottom: 30px !important;
+    background-color: #f8fafc !important;
+    min-height: 350px !important;
+}
+
+/* Editor container styling */
+.codex-editor {
+    background-color: #f8fafc !important;
+    border-radius: 8px !important;
+}
+
+/* Toolbar styling */
+.ce-toolbar__content {
+    max-width: none !important;
+}
+
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+    color: #ef4444 !important;
+    background: #ffffff !important;
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ce-toolbar__plus:hover,
+.ce-toolbar__settings-btn:hover {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #dc2626 !important;
+}
+
+/* Block styling */
+.ce-block__content {
+    max-width: none !important;
+    margin: 0 !important;
+    background: #dc2626;
+}
+
+.ce-block {
+    padding: 12px 0 !important;
+}
+
+
+/* Paragraph tool */
+.ce-paragraph {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+    color: #1f2937 !important;
+    background-color: transparent !important;
+}
+
+.ce-paragraph[data-placeholder]:empty::before {
+    color: #6b7280 !important;
+}
