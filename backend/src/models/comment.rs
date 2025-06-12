@@ -20,8 +20,11 @@ pub struct CommentResponse {
     pub profile_pic_url: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+/*
 #[derive(Debug, Deserialize)]
 pub struct CreateCommentRequest {
     pub content: String,
     pub post_id: Uuid,
 }
+*/

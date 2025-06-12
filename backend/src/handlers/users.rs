@@ -1,9 +1,11 @@
-use actix_web::{Error, HttpRequest, HttpResponse, web};
+use actix_web::{web, Error, HttpRequest, HttpResponse};
+use log::{error, info, warn};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth::{self, create_token, verify_password};
 use crate::models::user::{CreateUserRequest, LoginRequest, UpdateUserRequest, User, UserResponse};
+
 pub async fn register(
     pool: web::Data<PgPool>,
     user_req: web::Json<CreateUserRequest>,
@@ -19,18 +21,22 @@ pub async fn register(
     .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| {
-        eprintln!("Database error: {}", e);
+        error!("Database error while checking existing user: {}", e);
         actix_web::error::ErrorInternalServerError("Database error")
     })?;
 
     if existing_user.is_some() {
+        warn!(
+            "Attempt to register with existing username/email: {}",
+            user_req.username
+        );
         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Username or email already exists"
         })));
     }
 
     let password_hash = auth::hash_password(&user_req.password).map_err(|e| {
-        eprintln!("Password hashing error: {}", e);
+        error!("Password hashing error: {}", e);
         actix_web::error::ErrorInternalServerError("Password hashing error")
     })?;
 
@@ -50,11 +56,13 @@ pub async fn register(
     .fetch_one(pool.get_ref())
     .await
     .map_err(|e| {
-        eprintln!("Database error: {}", e);
+        error!("Database error while creating user: {}", e);
         actix_web::error::ErrorInternalServerError("Failed to create user")
     })?;
 
     let token = auth::create_token(user.id, user.is_admin)?;
+
+    info!("New user registered: {}", user.username);
 
     Ok(HttpResponse::Created().json(serde_json::json!({
         "message": "User created successfully",
@@ -63,15 +71,10 @@ pub async fn register(
     })))
 }
 
-pub async fn user_info(
-    pool: web::Data<PgPool>,
-    req: HttpRequest,
-) -> Result<HttpResponse, Error> {
+pub async fn user_info(pool: web::Data<PgPool>, req: HttpRequest) -> Result<HttpResponse, Error> {
     let claims = auth::validate_token(&req)?;
-
     let user_id = Uuid::parse_str(&claims.sub)
-    .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid user token"))?;
-
+        .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid user token"))?;
 
     let user = sqlx::query_as!(
         UserResponse,
@@ -85,25 +88,33 @@ pub async fn user_info(
     .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| {
-        eprintln!("Database Error: {}", e);
-        actix_web::error::ErrorInternalServerError("Database Error")
+        error!("Database error while fetching user info: {}", e);
+        actix_web::error::ErrorInternalServerError("Database error")
     })?;
 
     let user = match user {
         Some(user) => user,
-        None => return Err(actix_web::error::ErrorNotFound("User not found")),
+        None => {
+            warn!("User not found for ID: {}", user_id);
+            return Err(actix_web::error::ErrorNotFound("User not found"));
+        }
     };
-    
 
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "user": user,
-    })))
+    info!("User info retrieved for user ID: {}", user.id);
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "user": user })))
 }
 
 pub async fn login(
     pool: web::Data<PgPool>,
     login_req: web::Json<LoginRequest>,
+    req: HttpRequest,
 ) -> Result<HttpResponse, Error> {
+    let client_ip = req
+        .peer_addr()
+        .map(|addr| addr.ip().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
     let user = sqlx::query_as!(
         User,
         r#"
@@ -116,13 +127,17 @@ pub async fn login(
     .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| {
-        eprintln!("Database error: {}", e);
+        error!("Database error during login: {}", e);
         actix_web::error::ErrorInternalServerError("Database error")
     })?;
 
     let user = match user {
         Some(user) => user,
         None => {
+            warn!(
+                "Failed login: user not found; username={}, ip={}",
+                login_req.username, client_ip
+            );
             return Ok(HttpResponse::Unauthorized().json(serde_json::json!({
                 "error": "Invalid credentials"
             })));
@@ -131,15 +146,24 @@ pub async fn login(
 
     let valid_password =
         verify_password(&user.password_hash, &login_req.password).map_err(|e| {
-            eprintln!("Password verification failed: {}", e);
+            error!("Password verification error: {}", e);
             actix_web::error::ErrorInternalServerError("Password verification failed")
         })?;
 
     if !valid_password {
+        warn!(
+            "Failed login: invalid password; username={}, ip={}",
+            user.username, client_ip
+        );
         return Ok(HttpResponse::Unauthorized().json(serde_json::json!({
             "error": "Invalid credentials"
         })));
     }
+
+    info!(
+        "Successful login: username={}, ip={}",
+        user.username, client_ip
+    );
 
     let token = create_token(user.id, user.is_admin)?;
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -154,7 +178,6 @@ pub async fn update_profile(
     profile_data: web::Json<UpdateUserRequest>,
 ) -> Result<HttpResponse, Error> {
     let claims = auth::validate_token(&req)?;
-
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID in token"))?;
 
@@ -171,11 +194,18 @@ pub async fn update_profile(
         .fetch_optional(pool.get_ref())
         .await
         .map_err(|e| {
-            eprintln!("Database error: {}", e);
+            error!(
+                "Database error while checking for username/email conflicts: {}",
+                e
+            );
             actix_web::error::ErrorInternalServerError("Database error")
         })?;
 
         if existing.is_some() {
+            warn!(
+                "Profile update conflict: username/email already exists for user ID {}",
+                user_id
+            );
             return Ok(HttpResponse::BadRequest().json(serde_json::json!({
                 "error": "Username or email already exists"
             })));
@@ -184,7 +214,7 @@ pub async fn update_profile(
 
     let password_hash = if let Some(password) = &profile_data.password {
         Some(auth::hash_password(password).map_err(|e| {
-            eprintln!("Password hashing error: {}", e);
+            error!("Password hashing error during profile update: {}", e);
             actix_web::error::ErrorInternalServerError("Password hashing error")
         })?)
     } else {
@@ -213,9 +243,11 @@ pub async fn update_profile(
     .fetch_one(pool.get_ref())
     .await
     .map_err(|e| {
-        eprintln!("Database error: {}", e);
+        error!("Database error while updating profile for user {}: {}", user_id, e);
         actix_web::error::ErrorInternalServerError("Failed to update profile")
     })?;
+
+    info!("Profile updated successfully for user ID {}", user_id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Profile updated successfully",

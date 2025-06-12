@@ -74,6 +74,40 @@ const BlogPost: React.FC = () => {
                         </p>
                     );
 
+                case 'image':
+                    const imageUrl = block.data.file?.url || block.data.url;
+                    if (!imageUrl) {
+                        return null;
+                    }
+
+                    // Construct full URL if it's a relative path
+                    const fullImageUrl = imageUrl.startsWith('http')
+                        ? imageUrl
+                        : `http://localhost:8443${imageUrl}`;
+
+                    return (
+                        <figure key={block.id} className="my-6">
+                            <img
+                                src={fullImageUrl}
+                                alt={block.data.caption || ''}
+                                className={`w-full rounded-lg ${block.data.stretched ? 'max-w-full' : 'max-w-2xl mx-auto'
+                                    } ${block.data.withBorder ? 'border-2 border-gray-600' : ''
+                                    } ${block.data.withBackground ? 'p-4 bg-gray-800' : ''
+                                    }`}
+                                onError={(e) => {
+                                    console.error('Image failed to load:', fullImageUrl);
+                                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23374151" width="400" height="300"/%3E%3Ctext fill="%239CA3AF" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage not found%3C/text%3E%3C/svg%3E';
+                                }}
+                            />
+                            {block.data.caption && (
+                                <figcaption className="text-center text-gray-400 text-sm mt-2">
+                                    {block.data.caption}
+                                </figcaption>
+                            )}
+                        </figure>
+                    );
+
+
                 case 'list':
                     if (!block.data.items || !Array.isArray(block.data.items)) {
                         return null;

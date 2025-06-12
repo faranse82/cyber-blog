@@ -10,7 +10,7 @@ COPY . .
 RUN cargo build --release
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 8443
 
 # Run the binary
 CMD ["./target/release/cyber_blog_backend"]

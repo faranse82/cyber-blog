@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Post {
@@ -15,14 +16,18 @@ pub struct Post {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct CreatePostRequest {
+    #[validate(length(min = 1, max = 255))]
     pub title: String,
+    #[validate(length(min = 1, max = 50000))]
     pub content: String,
+    #[validate(length(max = 500))]
     pub excerpt: Option<String>,
     pub published: Option<bool>,
 }
 
+/*
 #[derive(Debug, Deserialize)]
 pub struct UpdatePostRequest {
     pub title: Option<String>,
@@ -30,6 +35,7 @@ pub struct UpdatePostRequest {
     pub excerpt: Option<String>,
     pub published: Option<bool>,
 }
+*/
 
 #[derive(Debug, Serialize)]
 pub struct AuthorInfo {

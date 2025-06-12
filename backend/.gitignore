@@ -18,6 +18,9 @@ Cargo.lock
 .env.production
 *.env.*
 
+/uploads
+
+
 # Logs
 logs/
 *.log
@@ -82,3 +85,5 @@ Thumbs.db
 /frontend/build/
 /frontend/node_modules/
 /public/bundles/
+
+# keys

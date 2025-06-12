@@ -1,19 +1,23 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
+use validator::Validate;
 
 use crate::auth::{self};
 use crate::models::post::Post;
-use crate::models::post::{
-    AuthorInfo, CommentResponse, CreatePostRequest, PostResponse, PostWithComments,
-    UpdatePostRequest,
-};
+use crate::models::post::{AuthorInfo, CreatePostRequest, PostResponse};
+use crate::sanitize;
 
 pub async fn create_post(
     req: HttpRequest,
     pool: web::Data<PgPool>,
     post_data: web::Json<CreatePostRequest>,
 ) -> Result<HttpResponse, actix_web::Error> {
+    // validating input length
+    post_data
+        .validate()
+        .map_err(|e| actix_web::error::ErrorBadRequest(format!("Validation error: {}", e)))?;
+
     let claims = auth::validate_token(&req)?;
 
     if !claims.is_admin {
@@ -27,6 +31,16 @@ pub async fn create_post(
 
     let slug = slug::slugify(&post_data.title);
 
+    // Sanitize the content to prevent XSS
+    let sanitized_content = sanitize::sanitize_editor_content(&post_data.content)
+        .map_err(|e| actix_web::error::ErrorBadRequest(format!("Invalid content format: {}", e)))?;
+
+    // Sanitize the excerpt if provided
+    let sanitized_excerpt = post_data
+        .excerpt
+        .as_ref()
+        .map(|e| sanitize::sanitize_html(e));
+
     let post = sqlx::query_as!(
         Post,
         r#"
@@ -36,8 +50,8 @@ pub async fn create_post(
         "#,
         post_data.title,
         slug,
-        post_data.content,
-        post_data.excerpt,
+        sanitized_content,
+        sanitized_excerpt,
         post_data.published.unwrap_or(false),
         author_id
     )
@@ -55,6 +69,7 @@ pub async fn create_post(
     Ok(HttpResponse::Created().json(post))
 }
 
+/*
 pub async fn delete_post(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -197,7 +212,7 @@ pub async fn get_post_with_comments(
         None => {
             return Ok(HttpResponse::NotFound().json(serde_json::json!({
                 "error": "Post not found"
-            })))
+            })));
         }
     };
 
@@ -250,6 +265,7 @@ pub async fn get_post_with_comments(
 
     Ok(HttpResponse::Ok().json(post_with_comments))
 }
+*/
 
 pub async fn get_post_by_slug(
     pool: web::Data<PgPool>,

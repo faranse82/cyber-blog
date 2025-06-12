@@ -1,9 +1,12 @@
+/*
 use actix_web::{web, HttpRequest, HttpResponse};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth;
 use crate::models::comment::{Comment, CommentResponse, CreateCommentRequest};
+
+
 pub async fn create_comment(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -75,6 +78,7 @@ pub async fn get_comments_for_post(
 
     Ok(HttpResponse::Ok().json(comment_responses))
 }
+
 
 pub async fn update_comment(
     req: HttpRequest,
@@ -185,3 +189,4 @@ pub async fn delete_comment(
 
     Ok(HttpResponse::Ok().json("Comment deleted successfully"))
 }
+*/

@@ -4,6 +4,7 @@ import Header from '@editorjs/header';
 import List from '@editorjs/list';
 import Quote from '@editorjs/quote';
 import Delimiter from '@editorjs/delimiter';
+import ImageTool from "@editorjs/image";
 import api from "../services/api";
 
 interface CreatePostProps {
@@ -66,8 +67,22 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
                         }
                     },
                     delimiter: {
-                        // @ts-ignore 
+                        // @ts-ignore
                         class: Delimiter
+                    },
+                    image: {
+                        class: ImageTool,
+                        config: {
+                            endpoints: {
+                                byFile: 'http://localhost:8443/api/files/upload',
+                                byUrl: 'http://localhost:8443/api/files/fetchUrl',
+                            },
+                            field: 'image',
+                            types: 'image/*',
+                            additionalRequestHeaders: {
+                                'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                            }
+                        }
                     }
                 },
                 data: {
@@ -225,8 +240,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ isOpen, onClose, onPostCreated 
                                     className="prose prose max-w-none min-h-[350px]"
                                 />
                             </div>
-                            <p className="text-black-400 text-xs mt-2">
-                                Click the editor to start writing. Use + button to add headers, lists, quotes, and more.
+                            <p className="text-gray-400 text-xs mt-2">
+                                Click the editor to start writing. Use + button to add headers, lists, quotes, images and more.
                             </p>
                         </div>
 
