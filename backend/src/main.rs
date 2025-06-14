@@ -15,8 +15,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().filter_or("RUST_LOG", "info"));
 
     let governor_conf = GovernorConfigBuilder::default()
-        .per_second(10)
-        .burst_size(15)
+        .per_second(150)
+        .burst_size(200)
         .finish()
         .unwrap();
 
@@ -45,17 +45,17 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(Governor::new(&governor_conf)) // applied rate limiting.
             .service(
-                web::scope("/auth")
+                web::scope("/api/auth")
                     .route("/register", web::post().to(handlers::users::register))
                     .route("/login", web::post().to(handlers::users::login)),
             )
             .service(
-                web::scope("/users")
+                web::scope("/api/users")
                     .route("/profile", web::put().to(handlers::users::update_profile))
                     .route("/me", web::get().to(handlers::users::user_info)),
             )
             .service(
-                web::scope("/posts")
+                web::scope("/api/posts")
                     .route("", web::get().to(handlers::posts::get_all_posts))
                     .route("/{slug}", web::get().to(handlers::posts::get_post_by_slug))
                     .route("/{id}", web::delete().to(handlers::posts::delete_post))
@@ -63,7 +63,7 @@ async fn main() -> std::io::Result<()> {
                     .route("", web::post().to(handlers::posts::create_post)),
             )
             .service(
-                web::scope("/comments")
+                web::scope("/api/comments")
                     .route("", web::post().to(handlers::comments::create_comment))
                     .route(
                         "/post/{post_id}",
@@ -79,7 +79,7 @@ async fn main() -> std::io::Result<()> {
                     ),
             )
             .service(
-                web::scope("/files")
+                web::scope("/api/files")
                     .route("/upload", web::post().to(handlers::files::upload_file))
                     .route("/fetchUrl", web::post().to(handlers::files::upload_by_url))
                     .route("/{filename}", web::get().to(handlers::files::get_file)),

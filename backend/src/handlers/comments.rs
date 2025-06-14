@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth;
+use crate::sanitize;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct CreateCommentRequest {
@@ -22,6 +23,24 @@ pub struct CommentResponse {
     pub created_at: DateTime<Utc>,
 }
 
+fn validate_comment_content(content: &str) -> Result<(), String> {
+    let trimmed = content.trim();
+
+    if trimmed.is_empty() {
+        return Err("Comment cannot be empty".to_string());
+    }
+
+    if trimmed.len() < 1 {
+        return Err("Comment is too short".to_string());
+    }
+
+    if trimmed.len() > 1000 {
+        return Err("Comment is too long (max 1000 characters)".to_string());
+    }
+
+    Ok(())
+}
+
 pub async fn create_comment(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -32,13 +51,20 @@ pub async fn create_comment(
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID in token"))?;
 
+    // Validate comment content
+    validate_comment_content(&comment_data.content)
+        .map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+
+    // Sanitize the comment content
+    let sanitized_content = sanitize::sanitize_html(&comment_data.content);
+
     let comment = sqlx::query!(
         r#"
         INSERT INTO comments (content, post_id, author_id)
         VALUES ($1, $2, $3)
         RETURNING id, content, post_id, author_id, created_at
         "#,
-        comment_data.content,
+        sanitized_content,
         comment_data.post_id,
         user_id
     )
@@ -129,6 +155,10 @@ pub async fn update_comment(
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID in token"))?;
 
+    // Validate comment content
+    validate_comment_content(&comment_data.content)
+        .map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+
     let existing_comment = sqlx::query!(
         r#"
         SELECT author_id FROM comments WHERE id = $1
@@ -151,6 +181,9 @@ pub async fn update_comment(
         return Ok(HttpResponse::Forbidden().json("Not authorized to update this comment"));
     }
 
+    // Sanitize the updated comment content
+    let sanitized_content = sanitize::sanitize_html(&comment_data.content);
+
     let updated_comment = sqlx::query!(
         r#"
         UPDATE comments
@@ -158,7 +191,7 @@ pub async fn update_comment(
         WHERE id = $2
         RETURNING id, content, post_id, author_id, created_at
         "#,
-        comment_data.content,
+        sanitized_content,
         comment_id
     )
     .fetch_one(pool.get_ref())

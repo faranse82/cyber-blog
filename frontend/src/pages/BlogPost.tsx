@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { format } from 'date-fns';
 import { Post } from "../types";
 import api from "../services/api";
+import Comments from "../components/Comments";
 
 interface EditorBlock {
     id: string;
@@ -30,7 +31,7 @@ const BlogPost: React.FC = () => {
 
     const fetchPost = async (postSlug: string) => {
         try {
-            const response = await api.get(`/api/posts/${postSlug}`);
+            const response = await api.get(`/posts/${postSlug}`);
             setPost(response.data);
         } catch (err: any) {
             setError(err.response?.status === 404 ? 'Post not found' : 'Failed to load post');
@@ -48,7 +49,7 @@ const BlogPost: React.FC = () => {
         try {
             switch (block.type) {
                 case 'header':
-                    const level = block.data.level || 2;
+                    const level = block.data.level ?? 2;
                     const HeaderTag = `h${level}` as keyof JSX.IntrinsicElements;
                     const headerClasses = {
                         1: 'text-4xl font-bold text-white mb-6 mt-8',
@@ -62,20 +63,21 @@ const BlogPost: React.FC = () => {
                         <HeaderTag
                             key={block.id}
                             className={headerClasses[level as keyof typeof headerClasses] || headerClasses[2]}
-                        >
-                            {String(block.data.text || '')}
-                        </HeaderTag>
+                            dangerouslySetInnerHTML={{ __html: String(block.data.text ?? '') }}
+                        />
                     );
 
                 case 'paragraph':
                     return (
-                        <p key={block.id} className="text-gray-300 mb-4 leading-relaxed">
-                            {String(block.data.text || '')}
-                        </p>
+                        <p
+                            key={block.id}
+                            className="text-gray-300 mb-4 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: String(block.data.text ?? '') }}
+                        />
                     );
 
                 case 'image':
-                    const imageUrl = block.data.file?.url || block.data.url;
+                    const imageUrl = block.data.file?.url ?? block.data.url;
                     if (!imageUrl) {
                         return null;
                     }
@@ -83,13 +85,13 @@ const BlogPost: React.FC = () => {
                     // Construct full URL if it's a relative path
                     const fullImageUrl = imageUrl.startsWith('http')
                         ? imageUrl
-                        : `http://localhost:8443${imageUrl}`;
+                        : `http://0.0.0.0:8443${imageUrl}`;
 
                     return (
                         <figure key={block.id} className="my-6">
                             <img
                                 src={fullImageUrl}
-                                alt={block.data.caption || ''}
+                                alt={block.data.caption ?? ''}
                                 className={`w-full rounded-lg ${block.data.stretched ? 'max-w-full' : 'max-w-2xl mx-auto'
                                     } ${block.data.withBorder ? 'border-2 border-gray-600' : ''
                                     } ${block.data.withBackground ? 'p-4 bg-gray-800' : ''
@@ -100,13 +102,13 @@ const BlogPost: React.FC = () => {
                                 }}
                             />
                             {block.data.caption && (
-                                <figcaption className="text-center text-gray-400 text-sm mt-2">
-                                    {block.data.caption}
-                                </figcaption>
+                                <figcaption
+                                    className="text-center text-gray-400 text-sm mt-2"
+                                    dangerouslySetInnerHTML={{ __html: block.data.caption }}
+                                />
                             )}
                         </figure>
                     );
-
 
                 case 'list':
                     if (!block.data.items || !Array.isArray(block.data.items)) {
@@ -118,8 +120,8 @@ const BlogPost: React.FC = () => {
                         return (
                             <div key={block.id} className="mb-6 space-y-2">
                                 {block.data.items.map((item: any, index: number) => {
-                                    const isChecked = item.meta?.checked || false;
-                                    const content = item.content || String(item);
+                                    const isChecked = item.meta?.checked ?? false;
+                                    const content = item.content ?? String(item);
 
                                     return (
                                         <div key={index} className="flex items-center gap-3">
@@ -133,10 +135,10 @@ const BlogPost: React.FC = () => {
                                                     </svg>
                                                 )}
                                             </div>
-                                            <span className={`text-gray-300 leading-relaxed ${isChecked ? 'line-through opacity-60' : ''
-                                                }`}>
-                                                {content}
-                                            </span>
+                                            <span
+                                                className={`text-gray-300 leading-relaxed ${isChecked ? 'line-through opacity-60' : ''}`}
+                                                dangerouslySetInnerHTML={{ __html: content }}
+                                            />
                                         </div>
                                     );
                                 })}
@@ -153,11 +155,13 @@ const BlogPost: React.FC = () => {
                             <ListTag key={block.id} className={listClass}>
                                 {block.data.items.map((item: any, index: number) => {
                                     // Handle both string items and object items
-                                    const content = typeof item === 'string' ? item : (item.content || String(item));
+                                    const content = typeof item === 'string' ? item : (item.content ?? String(item));
                                     return (
-                                        <li key={index} className="leading-relaxed">
-                                            {content}
-                                        </li>
+                                        <li
+                                            key={index}
+                                            className="leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: content }}
+                                        />
                                     );
                                 })}
                             </ListTag>
@@ -167,13 +171,15 @@ const BlogPost: React.FC = () => {
                 case 'quote':
                     return (
                         <blockquote key={block.id} className="border-l-4 border-red-500 pl-6 py-4 my-6 bg-gray-800/50 rounded-r-lg">
-                            <p className="text-lg italic text-gray-200 mb-2">
-                                "{String(block.data.text || '')}"
-                            </p>
+                            <p
+                                className="text-lg italic text-gray-200 mb-2"
+                                dangerouslySetInnerHTML={{ __html: `"${String(block.data.text ?? '')}"` }}
+                            />
                             {block.data.caption && (
-                                <cite className="text-sm text-gray-400">
-                                    — {String(block.data.caption)}
-                                </cite>
+                                <cite
+                                    className="text-sm text-gray-400"
+                                    dangerouslySetInnerHTML={{ __html: `— ${String(block.data.caption)}` }}
+                                />
                             )}
                         </blockquote>
                     );
@@ -190,17 +196,15 @@ const BlogPost: React.FC = () => {
                     );
 
                 default:
-                    // Fallback for unknown block types
                     return (
-                        <div key={block.id} className="text-gray-400 italic mb-4">
+                        <div key={block.id} className="text-gray-400 italic mb-4 text-sm sm:text-base">
                             [Unsupported content type: {block.type}]
                         </div>
                     );
             }
         } catch (error) {
-            console.error('Error rendering block:', block, error);
             return (
-                <div key={block.id} className="text-red-400 italic mb-4">
+                <div key={block.id} className="text-red-400 italic mb-4 text-sm sm:text-base">
                     [Error rendering block: {block.type}]
                 </div>
             );
@@ -209,10 +213,7 @@ const BlogPost: React.FC = () => {
 
     const renderContent = (contentString: string) => {
         try {
-            console.log('Raw content string:', contentString); // Debug log
             const content: EditorContent = JSON.parse(contentString);
-            console.log('Parsed content:', content); // Debug log
-            console.log('Blocks:', content.blocks); // Debug log
 
             if (!content.blocks || !Array.isArray(content.blocks)) {
                 console.warn('No blocks found in content');
@@ -220,7 +221,6 @@ const BlogPost: React.FC = () => {
             }
 
             return content.blocks.map((block, index) => {
-                console.log(`Rendering block ${index}:`, block); // Debug log
                 return renderBlock(block);
             }).filter(Boolean); // Remove any null/undefined blocks
         } catch (err) {
@@ -321,6 +321,9 @@ const BlogPost: React.FC = () => {
                         </div>
                     </footer>
                 </article>
+
+                {/* Comments Section */}
+                <Comments postId={post.id} />
             </div>
         </div>
     );

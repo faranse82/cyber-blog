@@ -7,16 +7,77 @@ interface PostCardProps {
     post: Post;
 }
 
+interface EditorBlock {
+    id: string;
+    type: string;
+    data: any;
+}
+
+interface EditorContent {
+    time: number;
+    blocks: EditorBlock[];
+    version: string;
+}
+
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const formattedDate = format(new Date(post.created_at), 'dd/MM/yyyy');
 
+    const getFirstImage = (contentString: string): string | null => {
+        try {
+            const content: EditorContent = JSON.parse(contentString);
+
+            if (!content.blocks || !Array.isArray(content.blocks)) {
+                return null;
+            }
+
+            const imageBlock = content.blocks.find((block: EditorBlock) =>
+                block.type === 'image' && block.data
+            );
+
+            if (imageBlock && imageBlock.data) {
+                const imageUrl = imageBlock.data.file?.url ?? imageBlock.data.url;
+
+                if (imageUrl) {
+                    return imageUrl.startsWith('http')
+                        ? imageUrl
+                        : `http://0.0.0.0:8443${imageUrl}`;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error parsing content for image:', error);
+            return null;
+        }
+    };
+
+    const firstImageUrl = getFirstImage(post.content);
+
     return (
         <div className="bg-[#262626] rounded-lg shadow-lg overflow-hidden flex flex-col h-full hover:transform hover:scale-105 transition-transform duration-200">
-            {/* Image placeholder */}
-            <div className="w-full h-48 bg-gradient-to-br from-red-400 to-red-900 flex items-center justify-center">
-                <div className="text-white text-4xl font-bold opacity-50">
-                    {post.title.charAt(0).toUpperCase()}
-                </div>
+            {/* Image or placeholder */}
+            <div className="w-full h-48 bg-gradient-to-br from-red-400 to-red-900 flex items-center justify-center relative overflow-hidden">
+                {firstImageUrl ? (
+                    <img
+                        src={firstImageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'text-white text-4xl font-bold opacity-50';
+                                fallback.textContent = post.title.charAt(0).toUpperCase();
+                                parent.appendChild(fallback);
+                            }
+                        }}
+                    />
+                ) : (
+                    <div className="text-white text-4xl font-bold opacity-50">
+                        {post.title.charAt(0).toUpperCase()}
+                    </div>
+                )}
             </div>
 
             {/* Content */}

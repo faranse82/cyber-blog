@@ -63,15 +63,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToLogin })
             localStorage.setItem('authToken', token);
             api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-            // Update auth context directly without calling login again
-            // You'll need to add a setUser function to your auth context
-            // For now, we'll just close and let the user login manually
-
             onClose();
 
         } catch (err: any) {
             console.error('Registration failed:', err);
-            setError(err.response?.data?.error || 'Registration failed');
+            setError(err.response?.data?.error ?? 'Registration failed');
         } finally {
             setLoading(false);
         }

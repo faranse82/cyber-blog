@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             username: userData.username,
             email: userData.email,
             is_admin: Boolean(userData.is_admin),
-            profile_pic_url: userData.profile_pic_url || undefined
+            profile_pic_url: userData.profile_pic_url ?? undefined
         };
     }, []);
 
@@ -258,7 +258,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!user) return;
 
         try {
-            const response = await api.get('/api/users/me');
+            const response = await api.get('/users/me');
             const normalizedUser = normalizeUserData(response.data);
             setUser(normalizedUser);
 
