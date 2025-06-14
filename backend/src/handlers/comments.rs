@@ -1,11 +1,26 @@
-/*
 use actix_web::{web, HttpRequest, HttpResponse};
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth;
-use crate::models::comment::{Comment, CommentResponse, CreateCommentRequest};
 
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct CreateCommentRequest {
+    pub content: String,
+    pub post_id: Uuid,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct CommentResponse {
+    pub id: Uuid,
+    pub content: String,
+    pub post_id: Uuid,
+    pub user_id: Uuid,
+    pub username: String,
+    pub profile_pic_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
 
 pub async fn create_comment(
     req: HttpRequest,
@@ -17,25 +32,48 @@ pub async fn create_comment(
     let user_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID in token"))?;
 
-    let comment = sqlx::query_as!(
-        Comment,
+    let comment = sqlx::query!(
         r#"
         INSERT INTO comments (content, post_id, author_id)
         VALUES ($1, $2, $3)
-        RETURNING id, content, post_id, author_id as user_id, created_at
+        RETURNING id, content, post_id, author_id, created_at
         "#,
         comment_data.content,
         comment_data.post_id,
         user_id
     )
-    .fetch_one(&**pool)
+    .fetch_one(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
         actix_web::error::ErrorInternalServerError("Failed to create comment")
     })?;
 
-    Ok(HttpResponse::Created().json(comment))
+    // Get user info for the response
+    let user_info = sqlx::query!(
+        r#"
+        SELECT username, profile_pic_url FROM users WHERE id = $1
+        "#,
+        user_id
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| {
+        eprintln!("Database error fetching user: {}", e);
+        actix_web::error::ErrorInternalServerError("Failed to fetch user info")
+    })?;
+
+    let response = CommentResponse {
+        id: comment.id,
+        content: comment.content,
+        post_id: comment.post_id,
+        user_id: comment.author_id,
+        username: user_info.username,
+        profile_pic_url: user_info.profile_pic_url,
+        created_at: comment.created_at,
+    };
+
+    Ok(HttpResponse::Created().json(response))
 }
 
 pub async fn get_comments_for_post(
@@ -47,7 +85,7 @@ pub async fn get_comments_for_post(
     let comments = sqlx::query!(
         r#"
         SELECT
-            c.id, c.content, c.post_id, c.author_id as user_id, c.created_at,
+            c.id, c.content, c.post_id, c.author_id, c.created_at,
             u.username, u.profile_pic_url
         FROM comments c
         JOIN users u ON c.author_id = u.id
@@ -56,7 +94,7 @@ pub async fn get_comments_for_post(
         "#,
         post_id
     )
-    .fetch_all(&**pool)
+    .fetch_all(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
@@ -69,7 +107,7 @@ pub async fn get_comments_for_post(
             id: row.id,
             content: row.content,
             post_id: row.post_id,
-            user_id: row.user_id,
+            user_id: row.author_id,
             username: row.username,
             profile_pic_url: row.profile_pic_url,
             created_at: row.created_at,
@@ -78,7 +116,6 @@ pub async fn get_comments_for_post(
 
     Ok(HttpResponse::Ok().json(comment_responses))
 }
-
 
 pub async fn update_comment(
     req: HttpRequest,
@@ -94,13 +131,11 @@ pub async fn update_comment(
 
     let existing_comment = sqlx::query!(
         r#"
-    SELECT author_id as "author_id!"  -- The ! tells sqlx this is NOT NULL
-    FROM comments
-    WHERE id = $1
-    "#,
+        SELECT author_id FROM comments WHERE id = $1
+        "#,
         comment_id
     )
-    .fetch_optional(&**pool)
+    .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
@@ -116,27 +151,48 @@ pub async fn update_comment(
         return Ok(HttpResponse::Forbidden().json("Not authorized to update this comment"));
     }
 
-    let updated_comment = sqlx::query_as!(
-        Comment,
+    let updated_comment = sqlx::query!(
         r#"
         UPDATE comments
-        SET
-            content = $1,
-            updated_at = NOW()
+        SET content = $1, updated_at = NOW()
         WHERE id = $2
-        RETURNING id, content, post_id, author_id as user_id, created_at
+        RETURNING id, content, post_id, author_id, created_at
         "#,
         comment_data.content,
         comment_id
     )
-    .fetch_one(&**pool)
+    .fetch_one(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
         actix_web::error::ErrorInternalServerError("Failed to update comment")
     })?;
 
-    Ok(HttpResponse::Ok().json(updated_comment))
+    // Get user info for the response
+    let user_info = sqlx::query!(
+        r#"
+        SELECT username, profile_pic_url FROM users WHERE id = $1
+        "#,
+        updated_comment.author_id
+    )
+    .fetch_one(pool.get_ref())
+    .await
+    .map_err(|e| {
+        eprintln!("Database error fetching user: {}", e);
+        actix_web::error::ErrorInternalServerError("Failed to fetch user info")
+    })?;
+
+    let response = CommentResponse {
+        id: updated_comment.id,
+        content: updated_comment.content,
+        post_id: updated_comment.post_id,
+        user_id: updated_comment.author_id,
+        username: user_info.username,
+        profile_pic_url: user_info.profile_pic_url,
+        created_at: updated_comment.created_at,
+    };
+
+    Ok(HttpResponse::Ok().json(response))
 }
 
 pub async fn delete_comment(
@@ -152,13 +208,11 @@ pub async fn delete_comment(
 
     let existing_comment = sqlx::query!(
         r#"
-    SELECT author_id as "author_id!"  -- The ! tells sqlx this is NOT NULL
-    FROM comments
-    WHERE id = $1
-    "#,
+        SELECT author_id FROM comments WHERE id = $1
+        "#,
         comment_id
     )
-    .fetch_optional(&**pool)
+    .fetch_optional(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
@@ -180,7 +234,7 @@ pub async fn delete_comment(
         "#,
         comment_id
     )
-    .execute(&**pool)
+    .execute(pool.get_ref())
     .await
     .map_err(|e| {
         eprintln!("Database error: {}", e);
@@ -189,4 +243,3 @@ pub async fn delete_comment(
 
     Ok(HttpResponse::Ok().json("Comment deleted successfully"))
 }
-*/

@@ -27,7 +27,6 @@ pub struct CreatePostRequest {
     pub published: Option<bool>,
 }
 
-/*
 #[derive(Debug, Deserialize)]
 pub struct UpdatePostRequest {
     pub title: Option<String>,
@@ -35,7 +34,6 @@ pub struct UpdatePostRequest {
     pub excerpt: Option<String>,
     pub published: Option<bool>,
 }
-*/
 
 #[derive(Debug, Serialize)]
 pub struct AuthorInfo {

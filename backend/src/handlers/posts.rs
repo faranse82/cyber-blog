@@ -4,8 +4,10 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::auth::{self};
-use crate::models::post::Post;
-use crate::models::post::{AuthorInfo, CreatePostRequest, PostResponse};
+use crate::models::post::{
+    AuthorInfo, CreatePostRequest, PostResponse, PostWithComments, UpdatePostRequest,
+};
+use crate::models::post::{CommentResponse, Post};
 use crate::sanitize;
 
 pub async fn create_post(
@@ -69,7 +71,6 @@ pub async fn create_post(
     Ok(HttpResponse::Created().json(post))
 }
 
-/*
 pub async fn delete_post(
     req: HttpRequest,
     pool: web::Data<PgPool>,
@@ -265,7 +266,6 @@ pub async fn get_post_with_comments(
 
     Ok(HttpResponse::Ok().json(post_with_comments))
 }
-*/
 
 pub async fn get_post_by_slug(
     pool: web::Data<PgPool>,
