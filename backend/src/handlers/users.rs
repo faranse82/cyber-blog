@@ -102,7 +102,7 @@ pub async fn user_info(pool: web::Data<PgPool>, req: HttpRequest) -> Result<Http
 
     info!("User info retrieved for user ID: {}", user.id);
 
-    Ok(HttpResponse::Ok().json(serde_json::json!({ "user": user })))
+    Ok(HttpResponse::Ok().json(serde_json::json!(user)))
 }
 
 pub async fn login(

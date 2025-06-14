@@ -113,6 +113,8 @@ fn sanitize_block_data(data: &mut serde_json::Map<String, Value>) {
     }
 }
 
+// TO-DO: ADD SANITISATION FOR COMMENTS
+
 fn is_safe_url(url: &str) -> bool {
     url.starts_with("http://")
         || url.starts_with("https://")

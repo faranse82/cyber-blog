@@ -19,30 +19,14 @@ pub async fn upload_file(
 ) -> Result<HttpResponse, Error> {
     log::info!("File upload request received");
 
-    // Log headers for debugging
-    for (name, value) in req.headers() {
-        log::debug!("Header {}: {:?}", name, value);
-    }
-
     // Validate admin access
     let claims = auth::validate_token(&req)?;
-    if !claims.is_admin {
-        log::warn!("Non-admin user attempted file upload");
-        return Ok(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only administrators can upload files"
-        })));
-    }
 
     let uploader_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID"))?;
 
     // Process multipart stream
     while let Some(mut field) = payload.try_next().await? {
-        // Log field name for debugging
-        if let Some(name) = field.name() {
-            log::info!("Processing field: {}", name);
-        }
-
         // Get filename from content disposition
         let filename = field
             .content_disposition()
@@ -162,11 +146,6 @@ pub async fn upload_by_url(
 ) -> Result<HttpResponse, Error> {
     // Validate admin access
     let claims = auth::validate_token(&req)?;
-    if !claims.is_admin {
-        return Ok(HttpResponse::Forbidden().json(serde_json::json!({
-            "error": "Only administrators can upload files"
-        })));
-    }
 
     let uploader_id = Uuid::parse_str(&claims.sub)
         .map_err(|_| actix_web::error::ErrorInternalServerError("Invalid user ID"))?;
